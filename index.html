@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD Operations</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .form-container {
+      margin: 20px 0;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>CRUD Operations</h1>
+
+  <!-- Create Item Form -->
+  <div class="form-container">
+    <h2>Create New Item</h2>
+    <input type="text" id="name" placeholder="Item Name" required>
+    <input type="text" id="description" placeholder="Item Description" required>
+    <input type="number" id="price" placeholder="Item Price" required>
+    <button onclick="createItem()">Create Item</button>
+  </div>
+
+  <!-- Display Items -->
+  <h2>Items List</h2>
+  <table id="itemsTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Price</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Items will be dynamically added here -->
+    </tbody>
+  </table>
+
+  <script>
+    const apiUrl = 'http://localhost:5000/api/items'; // Change to your backend API URL
+
+    // Fetch and display all items
+    async function fetchItems() {
+      const response = await fetch(apiUrl);
+      const items = await response.json();
+      const tableBody = document.querySelector('#itemsTable tbody');
+      tableBody.innerHTML = ''; // Clear existing rows
+
+      items.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.description}</td>
+          <td>${item.price}</td>
+          <td>
+            <button onclick="editItem('${item._id}')">Edit</button>
+            <button onclick="deleteItem('${item._id}')">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Create a new item
+    async function createItem() {
+      const name = document.getElementById('name').value;
+      const description = document.getElementById('description').value;
+      const price = document.getElementById('price').value;
+
+      if (!name || !description || !price) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      const newItem = {
+        name,
+        description,
+        price: parseFloat(price),
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newItem),
+      });
+
+      if (response.ok) {
+        alert('Item created successfully');
+        fetchItems(); // Refresh the item list
+      } else {
+        alert('Failed to create item');
+      }
+
+      // Clear input fields
+      document.getElementById('name').value = '';
+      document.getElementById('description').value = '';
+      document.getElementById('price').value = '';
+    }
+
+    // Edit an existing item
+    async function editItem(id) {
+      const item = await fetch(`${apiUrl}/${id}`).then(res => res.json());
+
+      const name = prompt('Enter new name', item.name);
+      const description = prompt('Enter new description', item.description);
+      const price = prompt('Enter new price', item.price);
+
+      if (!name || !description || !price) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      const updatedItem = {
+        name,
+        description,
+        price: parseFloat(price),
+      };
+
+      const response = await fetch(`${apiUrl}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedItem),
+      });
+
+      if (response.ok) {
+        alert('Item updated successfully');
+        fetchItems(); // Refresh the item list
+      } else {
+        alert('Failed to update item');
+      }
+    }
+
+    // Delete an item
+    async function deleteItem(id) {
+      const response = await fetch(`${apiUrl}/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Item deleted successfully');
+        fetchItems(); // Refresh the item list
+      } else {
+        alert('Failed to delete item');
+      }
+    }
+
+    // Initialize the page by fetching items
+    fetchItems();
+  </script>
+
+</body>
+</html>
